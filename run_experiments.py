@@ -1,7 +1,7 @@
 """
 run_experiments.py
 
-Runs the three experiments for Part 3 of the assignment and saves
+Runs the experiments for Parts 3 and 4 of the assignment and saves
 plots to the current directory. Each experiment prints its hypothesis,
 the parameter varied, and a short interpretation to stdout, matching
 the 5-step structure the assignment asks for (hypothesis, parameter
@@ -196,8 +196,59 @@ def experiment_3_bounded_fragments():
           f"late gain={late_gain:.3f}). Hypothesis supported: {supported}")
 
 
+def experiment_4_pool_size_sweep():
+    """
+    Part 4 support: does adding resources always improve availability?
+    Hypothesis: for a FIXED job size, a larger static pool helps (more
+    places to find a contiguous run), but when the job grows with the
+    pool (job = 25% of pool), static availability collapses while
+    reconfigurable stays high.
+    Parameter varied: pool size (cubes).
+    """
+    print("\n=== Experiment 4: Availability vs. Pool Size ===")
+    print("Hypothesis: a bigger static pool helps a fixed-size job but "
+          "not a job that grows with the pool; reconfigurable is "
+          "unaffected.")
+
+    pool_sizes = [16, 32, 64, 128, 256]
+    static_fixed, static_prop, reconf_prop = [], [], []
+    for n in pool_sizes:
+        k_prop = max(1, n // 4)
+        static_fixed.append(run_trials(n, 16, FAILURE_PROB, OCCUPIED_PROB_BASELINE,
+                                        "static", TRIALS, seed=SEED))
+        static_prop.append(run_trials(n, k_prop, FAILURE_PROB, OCCUPIED_PROB_BASELINE,
+                                       "static", TRIALS, seed=SEED))
+        reconf_prop.append(run_trials(n, k_prop, FAILURE_PROB, OCCUPIED_PROB_BASELINE,
+                                       "reconfigurable", TRIALS, seed=SEED))
+        print(f"  pool={n:4d} cubes  static(K=16)={static_fixed[-1]:.3f}  "
+              f"static(K=25%)={static_prop[-1]:.3f}  "
+              f"reconfigurable(K=25%)={reconf_prop[-1]:.3f}")
+
+    plt.figure(figsize=(7, 5))
+    plt.plot(pool_sizes, static_fixed, marker="o", label="Static, fixed 16-cube job")
+    plt.plot(pool_sizes, static_prop, marker="^", label="Static, job = 25% of pool")
+    plt.plot(pool_sizes, reconf_prop, marker="s", label="Reconfigurable, job = 25% of pool")
+    plt.xscale("log", base=2)
+    plt.xlabel("Pool size (cubes)")
+    plt.ylabel("Job availability")
+    plt.title("Experiment 4: Availability vs. Pool Size")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig("experiment4_pool_size.png", dpi=150)
+    plt.close()
+    print("Saved experiment4_pool_size.png")
+
+    supported = (static_fixed[-1] > static_fixed[0]
+                 and static_prop[-1] < static_prop[0]
+                 and reconf_prop[-1] >= 0.99)
+    print(f"Result: scale helps a fixed job but not a proportional one under "
+          f"static allocation. Hypothesis supported: {supported}")
+
+
 if __name__ == "__main__":
     experiment_1_job_size_sweep()
     experiment_2_occupancy_sweep()
     experiment_3_bounded_fragments()
+    experiment_4_pool_size_sweep()
     print("\nAll experiments complete. PNG files saved in current directory.")
