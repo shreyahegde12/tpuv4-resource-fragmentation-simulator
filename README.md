@@ -77,4 +77,4 @@ normal laptop.
   paper. It is calibrated so the reconfigurable curve reproduces the
   paper's ~94% availability at ~50 cubes / 3200 chips (Figure 1).
 - The pool is a 1D line of cubes (not the paper's 3D torus).
-- Failures and occupancy are independent per cube.
+- Each cube is assigned one of three mutually exclusive states using the configured failure and occupancy probabilities.
